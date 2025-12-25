@@ -1,0 +1,39 @@
+services:
+  # 1. MongoDB Database
+  mongo:
+    image: mongo
+    container_name: zip-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  # 2. Backend API
+  backend:
+    build: ./backend
+    container_name: zip-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/zip-uploader
+    depends_on:
+      - mongo
+    volumes:
+      - ./backend/storage:/app/storage # File Storage Sync
+      - ./backend:/app                 
+      - /app/node_modules        
+
+  # 3. Frontend UI
+  frontend:
+    build: ./frontend
+    container_name: zip-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app      
+      - /app/node_modules       
+
+volumes:
+  mongo-data:
