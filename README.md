@@ -1,41 +1,77 @@
-#  Resumable ZIP Uploader (>1GB)
+# Resilient Zip Uploader
 
-A robust, fault-tolerant file upload system capable of handling large ZIP files (>1GB) with chunking, concurrency control, and automatic resumability. Built with **React.js**, **Node.js (Express)**, and **MongoDB**.
+A robust, fault-tolerant file upload system designed to handle large ZIP files (>1GB) with network resilience, chunked uploading, and automated integrity verification.
 
-## Key Features
+**Submitted by:** Vikas Siwal  
+**Assignment:** WebDev Assignment - VizExperts
 
-### 🔹 Frontend (React)
-- **Smart Chunking:** Splits large files into **5MB chunks** using `Blob.slice()`.
-- **Resumability:** Automatically resumes uploads from the last successful chunk after network failure or page refresh.
-- **Concurrency Control:** Limits active uploads to **3 concurrent requests** to prevent browser freezing.
-- **Visual Feedback:** Live **Speed (MB/s)**, **ETA**, and a **Chunk Map** showing real-time status (Pending, Uploading, Success).
 
-### 🔹 Backend (Node.js)
-- **Streaming I/O:** Writes binary chunks directly to specific offsets in the file using `fs.write` (No high memory usage).
-- **Idempotency:** Handles duplicate chunk uploads gracefully without corrupting the file.
-- **Crash Recovery:** Stores upload state in MongoDB. If the server restarts, it knows exactly which chunks are missing.
-- **ZIP Peeking:** Uses `yauzl` to inspect ZIP contents immediately after upload without extracting the whole archive.
-- **Auto Cleanup:** A background job deletes orphaned/incomplete files older than 24 hours.
+##  Features
 
----
+### Core Functionality
+- **Smart Chunking:** Splits large files into 5MB chunks for efficient uploading.
+- **Resumability:** Automatically handles network failures (WiFi disconnects, Refreshes) and resumes uploads from the last successful chunk.
+- **Concurrency Control:** Limits parallel chunk uploads (Max 3) to prevent network congestion.
 
-## Tech Stack
-- **Frontend:** React + Vite, Axios
-- **Backend:** Node.js, Express, fs-extra
-- **Database:** MongoDB (Mongoose)
-- **Utilities:** Yauzl (ZIP reading), Multer (Handling binary data)
+### Backend & Integrity
+- **Stream-Based Processing:** Writes chunks directly to disk using streams, keeping memory usage low (RAM efficient).
+- **Deep Inspection (Peek):** Lists files inside the ZIP archive using `yauzl` without extracting the full content.
+- **Data Integrity:** Calculates **SHA-256 Hash** of the assembled file to verify upload success.
+- **Automated Cleanup:** Cron jobs (`node-cron`) automatically delete stale/incomplete fragments older than 24 hours.
+
+### User Interface
+- **Visual Grid:** Real-time visualization of chunk status (Pending, Uploading, Success).
+- **Live Metrics:** Displays current Upload Speed (MB/s) and Estimated Time of Arrival (ETA).
 
 ---
 
-##  How to Run Locally
+##  Tech Stack
+
+- **Frontend:** React.js (Vite), Axios
+- **Backend:** Node.js, Express.js
+- **Database:** MongoDB (Mongoose) for tracking upload state
+- **DevOps:** Docker, Docker Compose
+- **Libraries:** `fs-extra` (File Ops), `yauzl` (Zip Peek), `node-cron` (Cleanup)
+
+---
+
+## How to Run (Using Docker)
+
+The easiest way to run the application is using Docker Compose. This will set up the Frontend, Backend, and MongoDB database automatically.
 
 ### Prerequisites
-- Node.js installed
-- MongoDB running locally (or Atlas URI)
+- Docker Desktop installed and running.
 
-### 1. Setup Backend
+### Steps to Run
+
+1. **Clone the repository:**
+   ```bash
+   git clone <your-repo-url>
+   cd resilient-zip-uploader
+
+2. **Start the application:**   
+    ```bash
+    docker-compose up --build
+  
+3. **Access the Application:**   
+    - Frontend (UI): http://localhost:5173
+    - Backend API: http://localhost:3000
+4. **Stop the application:** 
+    ```bash
+     docker-compose down
+
+##  Project Structure
+
 ```bash
-cd backend
-npm install
-node app.js
-# Server runs on http://localhost:3000
+zip-uploader/
+├── backend/             # Node.js Express Server
+│   ├── src/
+│   │   ├── controllers/ # Upload logic (Chunking, Hashing, Peeking)
+│   │   ├── models/      # MongoDB Schema
+│   │   └── utils/       # Cleanup logic
+│   └── storage/         # Stores uploaded files (Mapped Volume)
+├── frontend/            # React Vite Client
+│   └── src/
+│   │   └── utils/       # Upload Manager (Client-side chunking)
+└── docker-compose.yml   # Orchestration for Frontend, Backend & Mongo
+
